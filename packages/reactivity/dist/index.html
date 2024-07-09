@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>自己写的</title>
+  </head>
+
+  <body>
+    <div id="app"></div>
+    <script type="module">
+      // import {reactive } from '/node_modules/vue/dist/vue.esm-browser'
+      import {
+        reactive,
+        effect,
+        ref,
+        toRefs,
+        toRef,
+        proxyRefs,
+        computed,
+        watch,
+        watchEffect
+      } from "./reactivity.esm.js";
+      let state = reactive({ name: "jack", age: 30 ,addres:{n:1}});
+      let so = toRefs(state);
+      let rf = toRef(state, "age");
+      let r=ref('')
+      effect(()=>{
+        console.log(r.value);
+      })
+      setTimeout(() => {
+        r.value=1000
+        r.value=2000
+      }, 3000);
+
+    </script>
+  </body>
+</html>
