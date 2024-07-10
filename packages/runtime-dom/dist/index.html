@@ -8,14 +8,21 @@
   <body>
     <div id="app"></div>
     <script type="module">
-      import { h } from "/node_modules/@vue/runtime-dom/dist/runtime-dom.esm-browser.js";
-      import { render } from "./runtime-dom.esm.js";
-      let el = h("h1", { style: { color: "red" } }, [
-        h("p", "a"),
-        h("p", "world"),
-      ]);
-      render(el, app);
-      console.log(el);
+      // import { h } from "/node_modules/@vue/runtime-dom/dist/runtime-dom.esm-browser.js";
+      import { render,h } from "./runtime-dom.esm.js";
+      // let el = h("h1", { style: { color: "red" } }, [
+      //   h("p", "a"),
+      //   h("p", "world"),
+      // ]);
+      // render(el, app);
+      let r1=h('h1','hello')
+      let r2=h('h1',{style:{color:'red'}},[h('div','1'),h('div','2')])
+      let r3=h('h1','world')
+      let r4=h('h1',[h('h1','ss')])
+      render(r1,app)
+      setTimeout(() => {
+        render(null,app)
+      }, 1000);
     </script>
   </body>
 </html>

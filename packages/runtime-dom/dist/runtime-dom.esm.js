@@ -94,15 +94,17 @@ function createInvoker(preValue) {
 }
 
 // packages/runtime-dom/src/modules/patchStyle.ts
-function patchStyle(el, preValue, nextValue) {
+function patchStyle(el, preValue = {}, nextValue) {
   let style = el.style;
   for (const key in nextValue) {
     style[key] = nextValue[key];
   }
   if (preValue) {
     for (const key in preValue) {
-      if (nextValue[key] == null) {
-        style[key] = null;
+      if (nextValue) {
+        if (nextValue[key] == null) {
+          style[key] = null;
+        }
       }
     }
   }
@@ -133,6 +135,9 @@ var isArray = Array.isArray;
 // packages/runtime-core/src/createVnode.ts
 function isVnode(props) {
   return props == null ? void 0 : props._v_isVnode;
+}
+function isSaveVnode(n1, n2) {
+  return n1.type === n2.type && n1.key === n2.key;
 }
 function createVnode(type, props, children) {
   const shapeFlag = isString(type) ? 1 /* ELEMENT */ : 0;
@@ -198,7 +203,7 @@ function createRenderer(renderOptions2) {
   };
   const mountElement = (vnode, container) => {
     const { type, children, props, shapeFlag } = vnode;
-    let el = hostCreateElement(type);
+    let el = vnode.el = hostCreateElement(type);
     if (props) {
       for (const key in props) {
         hostPatchProp(el, key, null, props[key]);
@@ -211,16 +216,82 @@ function createRenderer(renderOptions2) {
     }
     hostInsert(el, container);
   };
+  const processElement = (n1, n2, container) => {
+    if (n1 === null) {
+      mountElement(n2, container);
+    } else {
+      patchElement(n1, n2, container);
+    }
+  };
+  const unmountChildren = (children) => {
+    for (let i = 0; i < children.length; i++) {
+      let child = children[i];
+      unmount(child);
+    }
+  };
+  const patchChildren = (n1, n2, el) => {
+    const c1 = n1.children;
+    const c2 = n2.children;
+    const prevShapeFlag = n1.shapeFlag;
+    const shapeFlag = n2.shapeFlag;
+    if (shapeFlag & 8 /* TEXT_CHILDREN */) {
+      if (prevShapeFlag & 16 /* ARRAY_CHILDREN */) {
+        unmountChildren(c1);
+      }
+      if (c1 !== c2) {
+        hostSetElementText(el, c2);
+      }
+    } else {
+      if (prevShapeFlag & 16 /* ARRAY_CHILDREN */) {
+        if (shapeFlag & 16 /* ARRAY_CHILDREN */) {
+        } else {
+          unmountChildren(el);
+        }
+      } else {
+        if (prevShapeFlag & 8 /* TEXT_CHILDREN */) {
+          hostSetElementText(el, "");
+        }
+        if (shapeFlag & 16 /* ARRAY_CHILDREN */) {
+          mountChildren(c2, el);
+        }
+      }
+    }
+  };
+  const patchElement = (n1, n2, container) => {
+    let el = n2.el = n1.el;
+    let oldProps = n1.props || {};
+    let newProps = n2.props || {};
+    patchProps(oldProps, newProps, el);
+    patchChildren(n1, n2, el);
+  };
+  const patchProps = (oldProps, newProps, el) => {
+    for (const key in newProps) {
+      hostPatchProp(el, key, oldProps[key], newProps[key]);
+    }
+    for (const key in oldProps) {
+      if (!(key in newProps)) {
+        hostPatchProp(el, key, oldProps, null);
+      }
+    }
+  };
+  const unmount = (vnode) => {
+    hostRemove(vnode.el);
+  };
   const patch = (n1, n2, container) => {
     if (n1 === n2) {
       return;
     }
-    if (n1 === null) {
-      mountElement(n2, container);
+    if (n1 && !isSaveVnode(n1, n2)) {
+      unmount(n1);
+      n1 = null;
     }
+    processElement(n1, n2, container);
   };
   const render2 = (vnode, container) => {
     console.log(vnode, container);
+    if (vnode == null || container._v_isVnode) {
+      unmount(container._vnode);
+    }
     patch(container._vnode || null, vnode, container);
     container._vnode = vnode;
   };
@@ -238,6 +309,7 @@ export {
   createRenderer,
   createVnode,
   h,
+  isSaveVnode,
   isVnode,
   render,
   renderOptions
