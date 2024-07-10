@@ -122,9 +122,64 @@ var patchProp = (el, key, preValue, nextValue) => {
 };
 
 // packages/shared/src/index.ts
+var isObject = (value) => {
+  return typeof value === "object" && value !== null;
+};
+var isString = (value) => {
+  return typeof value === "string";
+};
 var isArray = Array.isArray;
 
-// packages/runtime-core/src/index.ts
+// packages/runtime-core/src/createVnode.ts
+function isVnode(props) {
+  return props == null ? void 0 : props._v_isVnode;
+}
+function createVnode(type, props, children) {
+  const shapeFlag = isString(type) ? 1 /* ELEMENT */ : 0;
+  const vnode = {
+    _v_isVnode: true,
+    type,
+    props,
+    children,
+    key: props == null ? void 0 : props.key,
+    el: null,
+    shapeFlag
+  };
+  if (children) {
+    if (Array.isArray(children)) {
+      vnode.shapeFlag |= 16 /* ARRAY_CHILDREN */;
+    } else {
+      children = String(children);
+      vnode.shapeFlag |= 8 /* TEXT_CHILDREN */;
+    }
+  }
+  return vnode;
+}
+
+// packages/runtime-core/src/h.ts
+function h(type, propsOrChildren, children) {
+  let l = arguments.length;
+  if (l === 2) {
+    if (isObject(propsOrChildren) && !Array.isArray(propsOrChildren)) {
+      if (isVnode(propsOrChildren)) {
+        return createVnode(type, null, [propsOrChildren]);
+      } else {
+        return createVnode(type, propsOrChildren);
+      }
+    }
+    return createVnode(type, null, propsOrChildren);
+  } else {
+    if (l > 3) {
+      children = Array.from(arguments).slice(2);
+    }
+    if (l == 3 && isVnode(children)) {
+      children = [children];
+    }
+    return createVnode(type, propsOrChildren, children);
+  }
+}
+
+// packages/runtime-core/src/renderer.ts
 function createRenderer(renderOptions2) {
   const {
     insert: hostInsert,
@@ -134,7 +189,7 @@ function createRenderer(renderOptions2) {
     setElementText: hostSetElementText,
     parentNode: hostParentNode,
     nextSibling: hostNextSibling,
-    pacthProp: hostPatchProp
+    patchProp: hostPatchProp
   } = renderOptions2;
   const mountChildren = (children, container) => {
     for (let i = 0; i < children.length; i++) {
@@ -181,6 +236,9 @@ var render = (vnode, container) => {
 };
 export {
   createRenderer,
+  createVnode,
+  h,
+  isVnode,
   render,
   renderOptions
 };

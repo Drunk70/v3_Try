@@ -10,8 +10,12 @@
     <script type="module">
       import { h } from "/node_modules/@vue/runtime-dom/dist/runtime-dom.esm-browser.js";
       import { render } from "./runtime-dom.esm.js";
-      let el = h("h1",[h("p",'hello'),h('p','world')]);
+      let el = h("h1", { style: { color: "red" } }, [
+        h("p", "a"),
+        h("p", "world"),
+      ]);
       render(el, app);
+      console.log(el);
     </script>
   </body>
 </html>
